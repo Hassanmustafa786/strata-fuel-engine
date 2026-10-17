@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 from apis.fuel_stations.models import FuelStation
 
 from .services import station_search
-from .services.errors import LocationNotFound
+from .services.errors import ExternalServiceError, LocationNotFound
 from .services.fuel_optimizer import FuelOption, plan_purchases
 from .services.geocoding import Location
 from .services.routing import Route
@@ -250,7 +250,10 @@ class TripPlanApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        body = response.json()
+        envelope = response.json()
+        self.assertIs(envelope["status"], True)
+        self.assertEqual(envelope["message"], "Trip planned successfully.")
+        body = envelope["data"]
         fuel = body["fuel_plan"]
         self.assertTrue(fuel["feasible"])
         self.assertEqual(
@@ -266,7 +269,14 @@ class TripPlanApiTests(TestCase):
     def test_validates_input(self):
         response = self.client.post(self.url, {"origin": "X"}, format="json")
         self.assertEqual(response.status_code, 400)
-        self.assertIn("destination", response.json())
+        self.assertEqual(response.json(), {
+            "status": False,
+            "message": "Invalid request.",
+            "data": {
+                "detail": {"destination": ["This field is required."]},
+                "code": "validation_error",
+            },
+        })
 
     def test_unknown_location_is_a_client_error(self):
         with mock.patch(
@@ -279,15 +289,62 @@ class TripPlanApiTests(TestCase):
                 format="json",
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["code"], "location_not_found")
+        self.assertEqual(response.json(), {
+            "status": False,
+            "message": "Location not found.",
+            "data": {
+                "detail": "Could not find 'Atlantis'",
+                "code": "location_not_found",
+            },
+        })
 
-    def test_map_page_renders(self):
-        response = self.client.get(
-            "/api/v1/trips/map/",
-            {"origin": "Omaha, NE", "destination": "Davenport, IA"},
+    def test_upstream_failure_is_a_bad_gateway(self):
+        with mock.patch(
+            "apis.trips.services.planner.get_route",
+            side_effect=ExternalServiceError("Routing service unavailable"),
+        ):
+            response = self.client.post(
+                self.url,
+                {"origin": "Omaha, NE", "destination": "Davenport, IA"},
+                format="json",
+            )
+        self.assertEqual(response.status_code, 502)
+        self.assertIs(response.json()["status"], False)
+        self.assertEqual(response.json()["data"]["code"], "upstream_error")
+
+    def test_malformed_json_uses_error_shape(self):
+        response = self.client.post(
+            self.url, "{not json", content_type="application/json"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "plan-data")
+        self.assertEqual(response.status_code, 400)
+        self.assertIs(response.json()["status"], False)
+        self.assertEqual(response.json()["data"]["code"], "parse_error")
+
+
+class OtherEndpointResponseTests(TestCase):
+    def setUp(self):
+        make_station("one", 41.0, -93.0, "3.10")
+
+    def test_station_list(self):
+        body = APIClient().get("/api/v1/fuel-stations/?page_size=1").json()
+        self.assertIs(body["status"], True)
+        self.assertEqual(body["message"], "Fuel stations retrieved.")
+        self.assertEqual(body["data"]["count"], 1)
+        self.assertEqual(body["data"]["results"][0]["name"], "one")
+
+    def test_station_list_page_out_of_range(self):
+        response = APIClient().get("/api/v1/fuel-stations/?page=99")
+        self.assertEqual(response.status_code, 404)
+        self.assertIs(response.json()["status"], False)
+        self.assertEqual(response.json()["data"]["code"], "not_found")
+
+    def test_health(self):
+        body = APIClient().get("/api/v1/health/").json()
+        self.assertEqual(body, {
+            "status": True,
+            "message": "Service is running.",
+            "data": {"stations": 1, "geocoded": 1},
+        })
 
 
 class GeocodingTests(SimpleTestCase):

@@ -236,34 +236,6 @@
       }
     },
     {
-      "name": "Map page",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{base_url}}/trips/map/?origin=Dallas, TX&destination=Atlanta, GA",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "trips",
-            "map"
-          ],
-          "query": [
-            {
-              "key": "origin",
-              "value": "Dallas, TX"
-            },
-            {
-              "key": "destination",
-              "value": "Atlanta, GA"
-            }
-          ]
-        },
-        "description": "HTML map; open in a browser."
-      }
-    },
-    {
       "name": "Fuel stations: cheapest in Texas",
       "request": {
         "method": "GET",

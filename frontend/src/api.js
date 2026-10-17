@@ -18,16 +18,21 @@ export async function planTrip(origin, destination, { signal } = {}) {
 
   const body = await response.json().catch(() => null)
 
-  if (!response.ok) {
+  // Every response is { status, message, data }.
+  if (!response.ok || !body?.status) {
     throw new Error(errorMessage(body) ?? `Request failed (${response.status}).`)
   }
-  return body
+  return body.data
 }
 
 function errorMessage(body) {
-  if (!body) return null
-  if (body.detail) return body.detail
-  // DRF validation errors: { field: ["message"], non_field_errors: [...] }
-  const first = Object.values(body).flat()[0]
-  return typeof first === 'string' ? first : null
+  const detail = body?.data?.detail
+  // The specific reason, e.g. "'Toronto, ON' is not in the USA."
+  if (typeof detail === 'string') return detail
+  // Validation errors: { field: ["message"], non_field_errors: [...] }
+  if (detail && typeof detail === 'object') {
+    const first = Object.values(detail).flat()[0]
+    if (typeof first === 'string') return first
+  }
+  return body?.message ?? null
 }

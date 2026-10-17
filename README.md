@@ -44,10 +44,19 @@ python seeder/geocode_stations.py
 Both `backend/data/` and `*.sqlite3` are git-ignored, so the dataset and database are
 not in the repository.
 
-Without the frontend, open the server-rendered map:
-<http://127.0.0.1:8000/api/v1/trips/map/?origin=Chicago,IL&destination=Denver,CO>
-
 ## API
+
+Every endpoint returns the same shape:
+
+```json
+{ "status": true,  "message": "Trip planned successfully.", "data": { "...": "..." } }
+{ "status": false, "message": "Location not found.",
+  "data": { "detail": "'Toronto, ON' is not in the USA.", "code": "location_not_found" } }
+```
+
+On errors, `message` is a short summary and `data.detail` is the specific reason. For
+validation errors, `data.detail` holds the field errors, for example
+`{"destination": ["This field is required."]}`.
 
 ### `POST /api/v1/trips/plan/`
 
@@ -58,7 +67,7 @@ Without the frontend, open the server-rendered map:
 Locations are free text (city, address, landmark) or `"latitude, longitude"`.
 Coordinates skip geocoding entirely. Both must be in the USA.
 
-Response (abridged):
+`data` on success (abridged):
 
 ```json
 {
@@ -99,18 +108,19 @@ Response (abridged):
 
 `route.geometry` is GeoJSON (`[longitude, latitude]`), ready for any map library.
 
-| Status | When |
-|---|---|
-| 200 | Plan returned. Check `fuel_plan.feasible`: `false` means the route has a stretch longer than 500 miles without a station. |
-| 400 | Missing field, same origin and destination, location not found, or not in the USA. |
-| 422 | No drivable route (e.g. Hawaii to the mainland). |
-| 502 | Geocoding or routing service unavailable. |
+| HTTP | `data.code` | When |
+|---|---|---|
+| 200 | — | Plan returned. Check `fuel_plan.feasible`: `false` means the route has a stretch longer than 500 miles without a station (`message` explains). |
+| 400 | `validation_error` | Missing field, or origin and destination are the same. |
+| 400 | `parse_error` | Request body is not valid JSON. |
+| 400 | `location_not_found` | Location not found, or not in the USA. |
+| 422 | `route_not_found` | No drivable route (e.g. Hawaii to the mainland). |
+| 502 | `upstream_error` | Geocoding or routing service unavailable. |
 
 ### Other endpoints
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/v1/trips/map/?origin=…&destination=…` | The same plan rendered as an HTML map page. |
 | `GET /api/v1/fuel-stations/?state=TX&geocoded=true&ordering=retail_price` | Paginated station list. |
 | `GET /api/v1/health/` | Station and geocoded counts. |
 

@@ -35,7 +35,7 @@ export default function RouteMap({ plan, selectedStop, onSelectStop }) {
     <MapContainer center={US_CENTER} zoom={4} className="map" scrollWheelZoom>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · Routing <a href="https://project-osrm.org/">OSRM</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
       {plan && (

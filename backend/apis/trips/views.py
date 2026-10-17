@@ -1,5 +1,7 @@
-from django.shortcuts import render
+import logging
+
 from rest_framework import status
+from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -11,24 +13,7 @@ from .services.errors import (
 )
 from .services.planner import plan_trip
 
-ERROR_STATUS = {
-    LocationNotFound: (status.HTTP_400_BAD_REQUEST, "location_not_found"),
-    RouteNotFound: (status.HTTP_422_UNPROCESSABLE_ENTITY, "route_not_found"),
-    ExternalServiceError: (status.HTTP_502_BAD_GATEWAY, "upstream_error"),
-}
-
-
-def _plan_or_error(data):
-    """Return (plan, None) or (None, (http_status, error_body))."""
-    serializer = TripPlanRequestSerializer(data=data)
-    if not serializer.is_valid():
-        return None, (status.HTTP_400_BAD_REQUEST, serializer.errors)
-
-    try:
-        return plan_trip(**serializer.validated_data), None
-    except tuple(ERROR_STATUS) as exc:
-        http_status, code = ERROR_STATUS[type(exc)]
-        return None, (http_status, {"detail": str(exc), "code": code})
+logger = logging.getLogger(__name__)
 
 
 class TripPlanView(APIView):
@@ -40,23 +25,80 @@ class TripPlanView(APIView):
     """
 
     def post(self, request):
-        plan, error = _plan_or_error(request.data)
-        if error:
-            return Response(error[1], status=error[0])
-        return Response(plan)
+        try:
+            serializer = TripPlanRequestSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    {
+                        "status": False,
+                        "message": "Invalid request.",
+                        "data": {
+                            "detail": serializer.errors,
+                            "code": "validation_error",
+                        },
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-
-def trip_map(request):
-    """GET ?origin=...&destination=... renders the plan on a map."""
-    context = {"query": request.GET}
-    http_status = status.HTTP_200_OK
-
-    if request.GET:
-        context["plan"], error = _plan_or_error(request.GET)
-        if error:
-            http_status, body = error
-            context["error"] = body.get(
-                "detail", "Enter two different locations."
+            plan = plan_trip(**serializer.validated_data)
+            fuel_plan = plan["fuel_plan"]
+            message = (
+                "Trip planned successfully." if fuel_plan["feasible"]
+                else "Route found, but no complete fuel plan: "
+                f"{fuel_plan['message']}"
+            )
+            return Response(
+                {"status": True, "message": message, "data": plan},
+                status=status.HTTP_200_OK,
             )
 
-    return render(request, "trips/map.html", context, status=http_status)
+        except ParseError as exc:
+            return Response(
+                {
+                    "status": False,
+                    "message": "Request body is not valid JSON.",
+                    "data": {"detail": str(exc.detail), "code": "parse_error"},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except LocationNotFound as exc:
+            return Response(
+                {
+                    "status": False,
+                    "message": "Location not found.",
+                    "data": {"detail": str(exc), "code": "location_not_found"},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except RouteNotFound as exc:
+            return Response(
+                {
+                    "status": False,
+                    "message": "No route found.",
+                    "data": {"detail": str(exc), "code": "route_not_found"},
+                },
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        except ExternalServiceError as exc:
+            return Response(
+                {
+                    "status": False,
+                    "message": "Map service is unavailable. Please try again.",
+                    "data": {"detail": str(exc), "code": "upstream_error"},
+                },
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except Exception:
+            # Keep the traceback in the server log, not in the response.
+            logger.exception("Trip planning failed")
+            return Response(
+                {
+                    "status": False,
+                    "message": "Something went wrong. Please try again.",
+                    "data": {
+                        "detail": "Internal server error.",
+                        "code": "server_error",
+                    },
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
