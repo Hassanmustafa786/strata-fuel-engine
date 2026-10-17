@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets
+.env
+backend/.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Private datasets
+backend/data/*
+!backend/data/.gitkeep
+# Django file cache
+backend/.cache/

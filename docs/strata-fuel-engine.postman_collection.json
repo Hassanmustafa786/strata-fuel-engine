@@ -1,0 +1,315 @@
+{
+  "info": {
+    "name": "Strata Fuel Engine",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Fuel route planner API. Start the backend with `python manage.py runserver`."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Plan trip: New York to Los Angeles",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/trips/plan/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "trips",
+            "plan"
+          ]
+        },
+        "description": "Cross-country trip with several fuel stops.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"New York, NY\",\n  \"destination\": \"Los Angeles, CA\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Plan trip: Chicago to Denver",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/trips/plan/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "trips",
+            "plan"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"Chicago, IL\",\n  \"destination\": \"Denver, CO\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Plan trip: short (one fill-up)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/trips/plan/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "trips",
+            "plan"
+          ]
+        },
+        "description": "Under 500 miles: only the starting fill-up.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"Chicago, IL\",\n  \"destination\": \"Indianapolis, IN\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Plan trip: coordinates (no geocoding)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/trips/plan/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "trips",
+            "plan"
+          ]
+        },
+        "description": "Coordinates skip the geocoding calls.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"41.8781, -87.6298\",\n  \"destination\": \"39.7392, -104.9903\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Error: outside the USA",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/trips/plan/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "trips",
+            "plan"
+          ]
+        },
+        "description": "400 location_not_found",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"Toronto, ON\",\n  \"destination\": \"Atlanta, GA\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Error: no drivable route",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/trips/plan/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "trips",
+            "plan"
+          ]
+        },
+        "description": "422 route_not_found",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"Honolulu, HI\",\n  \"destination\": \"Atlanta, GA\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Error: missing destination",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/trips/plan/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "trips",
+            "plan"
+          ]
+        },
+        "description": "400 validation error",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"Dallas, TX\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Map page",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/trips/map/?origin=Dallas, TX&destination=Atlanta, GA",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "trips",
+            "map"
+          ],
+          "query": [
+            {
+              "key": "origin",
+              "value": "Dallas, TX"
+            },
+            {
+              "key": "destination",
+              "value": "Atlanta, GA"
+            }
+          ]
+        },
+        "description": "HTML map; open in a browser."
+      }
+    },
+    {
+      "name": "Fuel stations: cheapest in Texas",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/fuel-stations/?state=TX&geocoded=true&ordering=retail_price",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "fuel-stations"
+          ],
+          "query": [
+            {
+              "key": "state",
+              "value": "TX"
+            },
+            {
+              "key": "geocoded",
+              "value": "true"
+            },
+            {
+              "key": "ordering",
+              "value": "retail_price"
+            }
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fuel Route Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root { --ink: #1c2430; --muted: #5d6b7c; --line: #dde3ea; --accent: #0f766e; --stop: #ea580c; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.45 system-ui, sans-serif; color: var(--ink); background: #f5f7f9; }
+    header { padding: 12px 16px; background: #fff; border-bottom: 1px solid var(--line); }
+    form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    input { flex: 1 1 200px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+    button { padding: 8px 16px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
+    .summary { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 10px; color: var(--muted); }
+    .summary strong { color: var(--ink); }
+    .error { margin-top: 10px; color: #b91c1c; }
+    #map { height: calc(100vh - 110px); min-height: 360px; }
+  </style>
+</head>
+<body>
+  <header>
+    <form method="get">
+      <input name="origin" placeholder="Origin, e.g. Chicago, IL" value="{{ query.origin|default:'' }}" required>
+      <input name="destination" placeholder="Destination, e.g. Denver, CO" value="{{ query.destination|default:'' }}" required>
+      <button type="submit">Plan route</button>
+    </form>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    {% if plan %}
+      <div class="summary">
+        <span>Distance <strong>{{ plan.route.distance_miles }} mi</strong></span>
+        <span>Fuel stops <strong>{{ plan.fuel_plan.stops|length }}</strong></span>
+        <span>Fuel <strong>{{ plan.fuel_plan.total_gallons }} gal</strong></span>
+        <span>Total cost <strong>${{ plan.fuel_plan.total_cost|floatformat:2 }}</strong></span>
+        {% if not plan.fuel_plan.feasible %}<span class="error">{{ plan.fuel_plan.message }}</span>{% endif %}
+      </div>
+    {% endif %}
+  </header>
+  <div id="map"></div>
+
+  {{ plan|json_script:"plan-data" }}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const plan = JSON.parse(document.getElementById("plan-data").textContent);
+    const map = L.map("map").setView([39.5, -98.35], 4);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors | Routing: OSRM',
+    }).addTo(map);
+
+    const pin = (color, text) => L.divIcon({
+      className: "",
+      html: `<div style="background:${color};color:#fff;border:2px solid #fff;border-radius:50%;width:26px;height:26px;display:grid;place-items:center;font:600 12px system-ui;box-shadow:0 1px 4px #0006">${text}</div>`,
+      iconSize: [26, 26], iconAnchor: [13, 13],
+    });
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+
+    if (plan) {
+      const line = L.polyline(
+        plan.route.geometry.coordinates.map(([lon, lat]) => [lat, lon]),
+        { color: "#0f766e", weight: 5, opacity: 0.85 },
+      ).addTo(map);
+      map.fitBounds(line.getBounds(), { padding: [30, 30] });
+
+      for (const s of plan.corridor_stations) {
+        L.circleMarker([s.latitude, s.longitude], { radius: 3, color: "#94a3b8", weight: 1, fillOpacity: 0.7 })
+          .bindTooltip(`${esc(s.name)} · $${s.price_per_gallon.toFixed(3)}`).addTo(map);
+      }
+      L.marker([plan.origin.latitude, plan.origin.longitude], { icon: pin("#16a34a", "A") })
+        .bindPopup(esc(plan.origin.label)).addTo(map);
+      L.marker([plan.destination.latitude, plan.destination.longitude], { icon: pin("#dc2626", "B") })
+        .bindPopup(esc(plan.destination.label)).addTo(map);
+
+      for (const stop of plan.fuel_plan.stops) {
+        const s = stop.station;
+        L.marker([s.latitude, s.longitude], { icon: pin("#ea580c", stop.order), zIndexOffset: 1000 })
+          .bindPopup(
+            `<strong>${stop.order}. ${esc(s.name)}</strong><br>${esc(s.address)}, ${esc(s.city)}, ${s.state}<br>` +
+            `$${s.price_per_gallon.toFixed(3)}/gal · mile ${stop.route_mile}<br>` +
+            `Buy ${stop.gallons} gal = <strong>$${stop.cost.toFixed(2)}</strong>`,
+          ).addTo(map);
+      }
+    }
+  </script>
+</body>
+</html>

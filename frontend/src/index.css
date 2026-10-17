@@ -1,0 +1,413 @@
+:root {
+  --ink: #1c2430;
+  --muted: #5d6b7c;
+  --line: #dde3ea;
+  --surface: #ffffff;
+  --canvas: #f4f6f8;
+  --accent: #0f766e;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6f4f2;
+  --stop: #ea580c;
+  --start: #16a34a;
+  --finish: #dc2626;
+  --danger: #b91c1c;
+  --danger-soft: #fdecec;
+  --warn-soft: #fff4e5;
+  --radius: 10px;
+
+  font: 15px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* Layout: side panel + full-height map; stacked on small screens. */
+.app {
+  display: grid;
+  grid-template-columns: minmax(340px, 400px) 1fr;
+  height: 100vh;
+}
+
+.panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+
+.map-wrap,
+.map {
+  height: 100%;
+  min-height: 320px;
+}
+
+@media (max-width: 760px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 55vh auto;
+    height: auto;
+  }
+  .map-wrap {
+    grid-row: 1;
+  }
+  .panel {
+    grid-row: 2;
+    border-right: 0;
+    padding: 16px;
+  }
+}
+
+/* Header */
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: var(--accent);
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--ink);
+}
+
+.brand p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* Form */
+.planner-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field {
+  position: relative;
+  display: block;
+}
+
+.field input {
+  width: 100%;
+  padding: 10px 44px 10px 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.field input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.field-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.field-icon.start {
+  color: var(--start);
+}
+
+.field-icon.finish {
+  color: var(--finish);
+}
+
+.swap {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.primary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.chip {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Messages */
+.error,
+.warning {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+}
+
+.error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.warning {
+  background: var(--warn-soft);
+  color: #9a3412;
+}
+
+.empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.fine-print {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.assumptions svg {
+  vertical-align: -2px;
+}
+
+/* Summary */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.total {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.total-label {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.total-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+
+.stat {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.stat dt {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.stat dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stop list */
+.section-title {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.stop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stop {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.stop:hover,
+.stop.selected {
+  border-color: var(--stop);
+}
+
+.stop.selected {
+  background: #fff7f0;
+}
+
+.stop-badge {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--stop);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.stop-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stop-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stop-place,
+.stop-fuel {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.stop-cost {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Map pins */
+.map-pin {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  font: 700 12px/1 system-ui, sans-serif;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+}
+
+.map-pin.start {
+  background: var(--start);
+}
+
+.map-pin.finish {
+  background: var(--finish);
+}
+
+.map-pin.stop {
+  background: var(--stop);
+}
