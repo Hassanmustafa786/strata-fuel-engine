@@ -24,6 +24,19 @@ class TripPlanView(APIView):
     cost. Locations may also be given as "latitude, longitude".
     """
 
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        return Response(
+            {
+                "status": False,
+                "message": f'Method "{request.method}" not allowed.',
+                "data": {
+                    "detail": "Use POST for this endpoint.",
+                    "code": "method_not_allowed",
+                },
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     def post(self, request):
         try:
             serializer = TripPlanRequestSerializer(data=request.data)

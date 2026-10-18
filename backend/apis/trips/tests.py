@@ -338,6 +338,23 @@ class OtherEndpointResponseTests(TestCase):
         self.assertIs(response.json()["status"], False)
         self.assertEqual(response.json()["data"]["code"], "not_found")
 
+    def test_wrong_method_uses_response_shape(self):
+        client = APIClient()
+        cases = [
+            ("get", "/api/v1/trips/plan/", "GET", "Use POST for this endpoint."),
+            ("post", "/api/v1/fuel-stations/", "POST", "Use GET for this endpoint."),
+            ("delete", "/api/v1/health/", "DELETE", "Use GET for this endpoint."),
+        ]
+        for method, url, name, detail in cases:
+            with self.subTest(url=url):
+                response = getattr(client, method)(url)
+                self.assertEqual(response.status_code, 405)
+                self.assertEqual(response.json(), {
+                    "status": False,
+                    "message": f'Method "{name}" not allowed.',
+                    "data": {"detail": detail, "code": "method_not_allowed"},
+                })
+
     def test_health(self):
         body = APIClient().get("/api/v1/health/").json()
         self.assertEqual(body, {

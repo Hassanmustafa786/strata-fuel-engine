@@ -37,6 +37,19 @@ class FuelStationListView(generics.ListAPIView):
     pagination_class = StationPagination
     ordering_fields = {"retail_price", "state", "city", "name", "id"}
 
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        return Response(
+            {
+                "status": False,
+                "message": f'Method "{request.method}" not allowed.',
+                "data": {
+                    "detail": "Use GET for this endpoint.",
+                    "code": "method_not_allowed",
+                },
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     def get_queryset(self):
         params = self.request.query_params
         queryset = FuelStation.objects.all()
@@ -98,6 +111,19 @@ class FuelStationListView(generics.ListAPIView):
 
 
 class HealthView(APIView):
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        return Response(
+            {
+                "status": False,
+                "message": f'Method "{request.method}" not allowed.',
+                "data": {
+                    "detail": "Use GET for this endpoint.",
+                    "code": "method_not_allowed",
+                },
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     def get(self, request):
         try:
             counts = FuelStation.objects.aggregate(
