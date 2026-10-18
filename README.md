@@ -32,17 +32,17 @@ npm install
 npm run dev
 ```
 
-Then load the stations (once). Put the supplied price file at
-`backend/data/fuel_prices.csv` and run:
+The repository includes `backend/db.sqlite3` with all 6,967 stations already imported
+and geocoded, so the app works straight after `migrate`.
+
+To rebuild the database from the price file instead, put it at
+`backend/data/fuel_prices.csv` (the `backend/data/` folder is git-ignored) and run:
 
 ```bash
 cd backend
 python seeder/seed_fuel_stations.py --file data/fuel_prices.csv --prune
 python seeder/geocode_stations.py
 ```
-
-Both `backend/data/` and `*.sqlite3` are git-ignored, so the dataset and database are
-not in the repository.
 
 ## API
 

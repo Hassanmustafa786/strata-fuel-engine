@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     # Default Django apps...
     "rest_framework",
     "corsheaders",
-    "apis.users.apps.UsersConfig",
     "apis.fuel_stations.apps.FuelStationsConfig",
     "apis.trips.apps.TripsConfig",
 ]

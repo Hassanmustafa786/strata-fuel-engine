@@ -224,7 +224,9 @@ each station has `location_precision` set to `"city"` or `"address"`.
 
 Everything in `backend/data/` except `.gitkeep` is ignored by Git (see
 `.gitignore`). The CSV is a private dataset, and the other files can be
-regenerated at any time by running the seeders.
+regenerated at any time by running the seeders. The finished database
+(`backend/db.sqlite3`, with all stations imported and geocoded) **is** committed,
+so the project runs without the CSV.
 
 ### 4.4 Geocoding results
 
@@ -351,6 +353,9 @@ saying where the gap is.
   is a few miles away.
 - The public OSRM and Nominatim servers are free demo services with no uptime
   guarantee. Their URLs can be changed to self-hosted servers in `.env`.
+- The settings are for local development: `DEBUG = True` and Django's generated
+  `SECRET_KEY` are in `settings.py`. For a real deployment, turn `DEBUG` off and
+  load the secret key from the environment.
 
 ------------------------------------------------------------------------
 
@@ -531,15 +536,14 @@ strata-fuel-engine/
 │   │   │       ├── station_search.py  stations near the route
 │   │   │       ├── fuel_optimizer.py  the optimiser (pure Python)
 │   │   │       └── errors.py          error types shown to API clients
-│   │   └── users/                     unused (from project setup)
 │   ├── seeder/
 │   │   ├── seed_fuel_stations.py      import prices
 │   │   ├── geocode_stations.py        add coordinates (Gazetteer + Nominatim)
 │   │   └── README.md
-│   ├── data/                          see section 4.3 (git-ignored)
+│   ├── data/                          see section 4.3 (git-ignored except .gitkeep)
 │   ├── notebooks/
 │   │   └── geopy_practice_sqlite3.ipynb   step-by-step walkthrough of a trip
-│   ├── db.sqlite3                     the database (git-ignored)
+│   ├── db.sqlite3                     the database, already geocoded (committed)
 │   └── requirements.txt
 └── frontend/
     ├── src/                           see section 8
@@ -584,8 +588,8 @@ Optional `backend/.env` values:
 cd backend
 pip install -r requirements.txt
 python manage.py migrate
-python seeder/seed_fuel_stations.py --file data/fuel_prices.csv --prune   # first time only
-python seeder/geocode_stations.py                                        # first time only
+python seeder/seed_fuel_stations.py --file data/fuel_prices.csv --prune   # only to rebuild from the CSV
+python seeder/geocode_stations.py                                        # only to rebuild from the CSV
 python manage.py runserver
 
 # Frontend: http://localhost:5173
